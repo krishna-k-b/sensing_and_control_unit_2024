@@ -1,117 +1,150 @@
 #include "sensor_math.hpp"
-#include "Fusion.h"
-#include "config.hpp"
+
 #include <math.h>
 #include <time.h>
+
+#include "Fusion.h"
 #include "MS5837.h"
+#include "config.hpp"
 #include "mpu6050.hpp"
-MS5837 Depth_Sensor;
 
 #define SAMPLE_RATE 100
 
 FusionOffset offset;
 FusionAhrs ahrs;
 FusionEuler euler;
-FusionVector gyroscope,accelerometer,magnetometer;
+FusionVector gyroscope, accelerometer, magnetometer;
 bool start = true;
-double current_time=millis(),prev_time=current_time,deltaTime=0;
+double current_time = millis(), prev_time = current_time, deltaTime = 0;
 
-const FusionMatrix gyroscopeMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+const FusionMatrix gyroscopeMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                            0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector gyroscopeSensitivity = {1.0f, 1.0f, 1.0f};
-FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
-const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+FusionVector gyroscopeOffset = {-1.21f, 3.58f, -1.02f};
+
+const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+                                                0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
-FusionVector accelerometerOffset = {0.0f, 0.0f, 0.0f};
-const FusionMatrix softIronMatrix = {0.971, -0.048, -0.024, -0.048, 0.972, -0.011, -0.024, -0.011, 1.063};
-const FusionVector hardIronOffset = {57.59, 88.22, 74.47};
+// FusionVector accelerometerOffset = {-0.10, 1.19, -0.04f};
+FusionVector accelerometerOffset = {-0.00, -0.11, 0.00};
 
-void initializeSensorMath() 
-{
-    FusionOffsetInitialise(&offset, SAMPLE_RATE);
-    FusionAhrsInitialise(&ahrs);
+const FusionMatrix softIronMatrix = {0.979, -0.024, -0.019, -0.024, 0.983,
+                                     0.007, -0.019, 0.007,  1.040};
+const FusionVector hardIronOffset = {53.31, 92.47, 80.06};
 
-    const FusionAhrsSettings settings = {
-            .convention = FusionConventionNwu,
-            .gain = 0.5f,
-            .gyroscopeRange = 250.0f, 
-            .accelerationRejection = 20.0f,
-            .magneticRejection = 20.0f,
-            .recoveryTriggerPeriod = 3 * SAMPLE_RATE, 
-    }; 
-    FusionAhrsSetSettings(&ahrs, &settings);
+void initializeSensorMath() {
+  FusionOffsetInitialise(&offset, SAMPLE_RATE);
+  FusionAhrsInitialise(&ahrs);
 
+  const FusionAhrsSettings settings = {
+      .convention = FusionConventionNwu,
+      .gain = 0.5f,
+      .gyroscopeRange = 250.0f,
+      .accelerationRejection = 20.0f,
+      .magneticRejection = 20.0f,
+      .recoveryTriggerPeriod = 3 * SAMPLE_RATE,
+  };
+  FusionAhrsSetSettings(&ahrs, &settings);
 }
 
-void updateOffset(MPU6050 gyro)
-{
-    float raw_a[3],raw_g[3],raw_m[3];
-    for (int  sample_no = 0; sample_no < NO_OF_SAMPLES ; sample_no++)
-    {
-    gyro.getSensorsReadings(raw_a[0], raw_a[1], raw_a[2], raw_g[0], raw_g[1], raw_g[2]);
+void updateOffset(MPU6050 gyro) {
+  float raw_a[3], raw_g[3], raw_m[3], raw_A[2], raw_G[2];
+  for (int sample_no = 0; sample_no < NO_OF_SAMPLES; sample_no++) {
+    gyro.getSensorsReadings(raw_A[0], raw_A[1], raw_a[2], raw_G[0], raw_G[1],
+                            raw_g[2]);
 
-    accelerometerOffset.array[0]+=raw_a[0];
-    accelerometerOffset.array[1]+=raw_a[1];
-    accelerometerOffset.array[2]+=raw_a[2];
-    gyroscopeOffset.array[0]+=raw_g[0];
-    gyroscopeOffset.array[1]+=raw_g[1];
-    gyroscopeOffset.array[2]+=raw_g[2];
+    raw_a[0] = raw_A[1];
+    raw_a[1] = -raw_A[0];
+    raw_g[0] = raw_G[1];
+    raw_g[1] = -raw_G[0];
+    accelerometerOffset.array[0] += raw_a[0] / G;
+    accelerometerOffset.array[1] += raw_a[1] / G;
+    accelerometerOffset.array[2] += raw_a[2] / G;
+    gyroscopeOffset.array[0] += raw_g[0];
+    gyroscopeOffset.array[1] += raw_g[1];
+    gyroscopeOffset.array[2] += raw_g[2];
+  }
 
-    accelerometerOffset.array[0]/= NO_OF_SAMPLES;
-    accelerometerOffset.array[1]/= NO_OF_SAMPLES;
-    accelerometerOffset.array[2]/= NO_OF_SAMPLES;
-    gyroscopeOffset.array[0]/=NO_OF_SAMPLES;
-    gyroscopeOffset.array[1]/=NO_OF_SAMPLES;
-    gyroscopeOffset.array[2]/=NO_OF_SAMPLES;
-    accelerometerOffset.array[2]-=G;
-    }
+  accelerometerOffset.array[0] /= NO_OF_SAMPLES;
+  accelerometerOffset.array[1] /= NO_OF_SAMPLES;
+  accelerometerOffset.array[2] /= NO_OF_SAMPLES;
+  gyroscopeOffset.array[0] /= NO_OF_SAMPLES;
+  gyroscopeOffset.array[1] /= NO_OF_SAMPLES;
+  gyroscopeOffset.array[2] /= NO_OF_SAMPLES;
+  accelerometerOffset.array[2] -= 1;
 
+  nh.loginfo("Imu calibrated.");
+  // double dtostrf(gyrosc, min_width, num_digits_after_decimal,
+  // where_to_store_string); ROS_INFO("Gyroscope offsets:\ngx=%d ,gy =%d ,gz=%d
+  // .",
+  //          gyroscopeOffset.array[0], gyroscopeOffset.array[1],
+  //          gyroscopeOffset.array[2]);
+  // ROS_INFO("Accelerometer offsets:\nax=%d ,ay =%d ,az=%d .",
+  //          accelerometerOffset.array[0], accelerometerOffset.array[1],
+  //          accelerometerOffset.array[2]);
 }
-void applyIMUCalibration(float &ax, float &ay, float &az, float &gx, float &gy, float &gz, float &mx, float &my, float &mz) 
-{
-    gyroscope = {gx, gy, gz}; 
-    accelerometer = {ax, ay, az}; 
-    magnetometer = {mx, my, mz};
-    
-    gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
-    accelerometer = FusionCalibrationInertial(accelerometer, accelerometerMisalignment, accelerometerSensitivity, accelerometerOffset);
-    magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
+void applyIMUCalibration(float &ax, float &ay, float &az, float &gx, float &gy,
+                         float &gz, float &mx, float &my, float &mz) {
+  gyroscope = {gx, gy, gz};
+  accelerometer = {ax, ay, az};
+  magnetometer = {mx, my, mz};
 
-    gyroscope = FusionOffsetUpdate(&offset, gyroscope);
+  gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment,
+                                        gyroscopeSensitivity, gyroscopeOffset);
+  accelerometer =
+      FusionCalibrationInertial(accelerometer, accelerometerMisalignment,
+                                accelerometerSensitivity, accelerometerOffset);
+  magnetometer =
+      FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
+
+  ax = accelerometer.axis.x;
+  ay = accelerometer.axis.y;
+  az = accelerometer.axis.z;
+
+  mx = magnetometer.axis.x;
+  my = magnetometer.axis.y;
+  mz = magnetometer.axis.z;
+
+  gx = gyroscope.axis.x;
+  gy = gyroscope.axis.y;
+  gz = gyroscope.axis.z;
+  gyroscope = FusionOffsetUpdate(&offset, gyroscope);
 }
 
-void applyDepthSensorCalibration(float& depth)
-{
-    depth=Depth_Sensor.depth();
-}
+void updateOrientation(float ax, float ay, float az, float gx, float gy,
+                       float gz, float mx, float my, float mz, float &roll,
+                       float &pitch, float &yaw) {
+  // float _roll, _pitch, _yaw;
+  gyroscope = {gx, gy, gz};
+  accelerometer = {ax, ay, az};
+  magnetometer = {mx, my, mz};
+  current_time = millis();
+  deltaTime = current_time - prev_time;
+  prev_time = current_time;
+  if (start) {
+    start = !start;
+    deltaTime = 0;
+  }
+  deltaTime = deltaTime / 1000;
+  FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, deltaTime);
+  const FusionEuler rotation =
+      FusionQuaternionToEuler(FusionAhrsGetQuaternion(&ahrs));
+  const FusionVector translation = FusionAhrsGetEarthAcceleration(&ahrs);
 
-void updateOrientation(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz, float &roll, float &pitch, float &yaw)
-{
-    float _roll, _pitch, _yaw;
-    gyroscope = {gx, gy, gz}; 
-    accelerometer = {ax, ay, az}; 
-    magnetometer = {mx, my, mz};
-    current_time=millis();
-    deltaTime=current_time-prev_time;
-    prev_time = current_time;
-    if (start)
-    {
-         start = !start;
-         deltaTime = 0;
-    }
-    FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, deltaTime);
-    const FusionEuler rotation = FusionQuaternionToEuler(FusionAhrsGetQuaternion(&ahrs));
-    const FusionVector translation = FusionAhrsGetEarthAcceleration(&ahrs);
+  roll = rotation.angle.roll;
+  pitch = -rotation.angle.pitch;
+  yaw = rotation.angle.yaw;
+  if (roll < 0) {
+    roll += 360;
+  }
+  if (pitch < 0) {
+    pitch += 360;
+  }
+  if (yaw < 0) {
+    yaw += 360;
+  }
 
-    _roll =rotation.angle.roll;
-    _pitch = rotation.angle.pitch;
-    _yaw = rotation.angle.yaw;
-
-  
-    roll = 0.9 * roll + 0.1 * _roll;
-    pitch = 0.9 * pitch + 0.1 * _pitch;
-    yaw = 0.9 * yaw + 0.1 * _yaw;
-
-    ax=translation.axis.x;
-    ay=translation.axis.y;
-    az=translation.axis.z;
+  // ax=translation.axis.x;
+  // ay=translation.axis.y;
+  // az=translation.axis.z;
 }
