@@ -20,12 +20,13 @@ void setup() {
   Wire.setSDA(PB7);
   Wire.setSCL(PB6);
   Wire.begin();
-
+  
   initializeCommunication();
   initializeIMU();
   initializeDepthSensor();
   initializeSensorMath();
   initializeThrusters();
+  initializeLED();
   previous_update_rate = micros();
   previous_publish_rate = millis();
 }

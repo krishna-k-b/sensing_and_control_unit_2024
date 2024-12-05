@@ -29,6 +29,7 @@ void initializeCommunication() {
   nh.initNode();
   nh.subscribe(PWMsub);
   nh.subscribe(calibrationSub);
+  nh.subscribe(diagnosticSub);
   nh.advertise(linearAccelerationPub);
   nh.advertise(AngularVelocityPub);
   nh.advertise(magneticFieldPub);
@@ -84,6 +85,8 @@ void calibrationCb(const std_msgs::Bool& calibration_status) {
 void ledCb(const std_msgs::Int16& led_msg) {
   int16_t led_indicator = led_msg.data;
   setLED(led_indicator);
+  nh.loginfo("Led indicator received.");
+
 }
 
 void checkForCommands() { nh.spinOnce(); }

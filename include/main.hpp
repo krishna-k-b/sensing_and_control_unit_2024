@@ -7,6 +7,7 @@
 #include "sensor_interface.hpp"
 #include "sensor_math.hpp"
 #include "thruster_interface.hpp"
+#include "diagnostics.hpp"
 
 #define UPDATE_RATE 100
 #define PUBLISH_RATE 10
