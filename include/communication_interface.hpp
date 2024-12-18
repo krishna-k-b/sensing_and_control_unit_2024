@@ -19,4 +19,5 @@ void throttleCb(const std_msgs::Int32MultiArray& pwm_msg);
 void calibrationCb(const std_msgs::Bool& calibration_status);
 void ledCb(const std_msgs::Int16& led_msg);
 void checkForCommands();
+void dropperCb(const std_msgs::Bool& dropper_control);
 #endif  // COMMUNICATION_INTERFACE_HPP

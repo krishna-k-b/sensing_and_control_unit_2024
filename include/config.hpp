@@ -11,4 +11,7 @@
 #define CALIBRATION_MODE 0
 #define CALIBRATION_UPDATE_MODE 2
 #define G 9.80665
+const uint8_t m1 = PA4;
+const uint8_t m2 = PA5;
+const uint8_t mpwm = PA7;
 #endif  // CONFIG_HPP

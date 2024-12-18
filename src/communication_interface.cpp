@@ -11,7 +11,10 @@ geometry_msgs::Vector3 orientation_RPY;
 std_msgs::Int32MultiArray pwm_values;
 std_msgs::Float32 depth_data;
 std_msgs::Bool calibration_status;
+std_msgs::Bool dropper_control;
 ros::NodeHandle nh;
+
+
 
 ros::Publisher linearAccelerationPub("/sensors/linear_acceleration",
                                      &linearAcceleration);
@@ -23,12 +26,15 @@ ros::Publisher DepthDataPub("/sensors/depth", &depth_data);
 ros::Subscriber<std_msgs::Int32MultiArray> PWMsub("/control/pwm", &throttleCb);
 ros::Subscriber<std_msgs::Bool> calibrationSub("/control/calibration",
                                                &calibrationCb);
+ros::Subscriber<std_msgs::Bool> dropperSub("/control/dropper",
+                                               &dropperCb);
 ros::Subscriber<std_msgs::Int16> diagnosticSub("/control/led", &ledCb);
 
 void initializeCommunication() {
   nh.initNode();
   nh.subscribe(PWMsub);
   nh.subscribe(calibrationSub);
+  nh.subscribe(dropperSub);
   nh.subscribe(diagnosticSub);
   nh.advertise(linearAccelerationPub);
   nh.advertise(AngularVelocityPub);
@@ -87,6 +93,12 @@ void ledCb(const std_msgs::Int16& led_msg) {
   setLED(led_indicator);
   nh.loginfo("Led indicator received.");
 
+}
+
+void dropperCb(const std_msgs::Bool& dropper_control){
+  bool activate = dropper_control.data;
+  if(activate)
+  activateDropper();
 }
 
 void checkForCommands() { nh.spinOnce(); }

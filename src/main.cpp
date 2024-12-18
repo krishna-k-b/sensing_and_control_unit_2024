@@ -27,6 +27,7 @@ void setup() {
   initializeSensorMath();
   initializeThrusters();
   initializeLED();
+  initializeDropper();
   previous_update_rate = micros();
   previous_publish_rate = millis();
 }

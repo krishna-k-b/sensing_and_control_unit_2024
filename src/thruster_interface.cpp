@@ -45,3 +45,27 @@ void setThrusterThrottle(const int32_t *pwm_values) {
     g_thrusters[thruster_index].writeMicroseconds(pwm_value);
   }
 }
+void initializeDropper(){
+  pinMode(m1,OUTPUT);
+  pinMode(m2,OUTPUT);
+  pinMode(mpwm,OUTPUT);
+  digitalWrite(m1,LOW);
+  digitalWrite(m2,LOW);
+  analogWrite(mpwm,0);
+}
+
+void activateDropper(){
+    digitalWrite(m1,HIGH);
+    digitalWrite(m2,LOW);
+    analogWrite(mpwm,200);
+    delay(500);
+    digitalWrite(m1,LOW);
+    digitalWrite(m2,LOW);
+    delay(3000);
+    digitalWrite(m1,LOW);
+    digitalWrite(m2,HIGH);
+    analogWrite(mpwm,200);
+    delay(500);
+    digitalWrite(m1,LOW);
+    digitalWrite(m2,LOW);
+}
