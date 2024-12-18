@@ -4,6 +4,7 @@
 
 Servo g_thrusters[NUMBER_OF_THRUSTERS];
 const uint8_t g_kPinMap[NUMBER_OF_THRUSTERS] = THRUSTER_PINS;
+const uint32_t g_initPwm[NUMBER_OF_THRUSTERS] = INIT_THRUSTER_PWM;
 /**
  * @brief Initialize thrusters, set initial PWM for idle state.
  *
@@ -20,7 +21,7 @@ void initializeThrusters() {
   for (int thruster_index = 0; thruster_index < NUMBER_OF_THRUSTERS;
        thruster_index++) {
     g_thrusters[thruster_index].attach(g_kPinMap[thruster_index]);
-    g_thrusters[thruster_index].writeMicroseconds(INIT_THRUSTER_PWM);
+    g_thrusters[thruster_index].writeMicroseconds(g_initPwm[thruster_index]);
   }
 }
 
