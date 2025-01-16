@@ -3,8 +3,7 @@
 #include "config.hpp"
 
 void initializeIMU() {
-  sensor_t accel, mag;
-  accelmag.begin();
+  mag.begin();
   gyro.begin();
   gyro.setAccelerometerRange(ACCELERO_METER_RANGE_2);
   gyro.setGyroscopeRange(GYROSCOPE_RANGE_250);
@@ -20,15 +19,15 @@ void initializeDepthSensor() {
 
 void updateIMUReadings(float& ax, float& ay, float& az, float& gx, float& gy,
                        float& gz, float& mx, float& my, float& mz) {
-  sensors_event_t accel_event, mag_event;
-  accelmag.getEvent(&accel_event, &mag_event);
+  sensors_event_t mag_event;
+  mag.getEvent(&mag_event);
   float Ax, Ay, Gx, Gy;
   gyro.getSensorsReadings(Ax, Ay, az, Gx, Gy, gz);
-  ax = Ay / G;
-  ay = -Ax / G;
+  ax = -Ay / G;
+  ay = Ax / G;
   az = az / G;
-  gx = Gy;
-  gy = -Gx;
+  gx = -Gy;
+  gy = Gx;
 
   mx = mag_event.magnetic.x;
   my = mag_event.magnetic.y;

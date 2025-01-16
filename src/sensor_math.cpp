@@ -53,10 +53,10 @@ void updateOffset(MPU6050 gyro) {
     gyro.getSensorsReadings(raw_A[0], raw_A[1], raw_a[2], raw_G[0], raw_G[1],
                             raw_g[2]);
 
-    raw_a[0] = raw_A[1];
-    raw_a[1] = -raw_A[0];
-    raw_g[0] = raw_G[1];
-    raw_g[1] = -raw_G[0];
+    raw_a[0] = -raw_A[1];
+    raw_a[1] = raw_A[0];
+    raw_g[0] = -raw_G[1];
+    raw_g[1] = raw_G[0];
     accelerometerOffset.array[0] += raw_a[0] / G;
     accelerometerOffset.array[1] += raw_a[1] / G;
     accelerometerOffset.array[2] += raw_a[2] / G;

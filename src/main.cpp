@@ -6,7 +6,7 @@
 
 float ax, ay, az, gx, gy, gz, mx, my, mz, depth, roll, pitch, yaw;
 
-Adafruit_FXOS8700 accelmag = Adafruit_FXOS8700(ACCEL_ID, MAG_ID);
+Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
 MPU6050 gyro;
 MS5837 depth_sensor;
 
@@ -49,9 +49,9 @@ void loop() {
     sendOrientation(roll, pitch, yaw);
     sendDepth(depth);
 
-    // Serial.print("roll: "); Serial.println(roll);
-    // Serial.print("pitch: "); Serial.println(pitch);
-    // Serial.print("yaw: "); Serial.println(yaw);
+    Serial.print("roll: "); Serial.println(roll);
+    Serial.print("pitch: "); Serial.println(pitch);
+    Serial.print("yaw: "); Serial.println(yaw);
   }
   checkForCommands();
 }
