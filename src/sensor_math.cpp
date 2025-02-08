@@ -28,21 +28,48 @@ const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
 // FusionVector accelerometerOffset = {-0.10, 1.19, -0.04f};
 FusionVector accelerometerOffset = {-0.00, -0.11, 0.00};
 
-const FusionMatrix softIronMatrix = {0.979, -0.024, -0.019, -0.024, 0.983,
-                                     0.007, -0.019, 0.007,  1.040};
-const FusionVector hardIronOffset = {53.31, 92.47, 80.06};
+
+// const FusionMatrix softIronMatrix = {1.049, 0.005, 0.008, 0.005, 0.999, -0.023, 0.008, -0.023, 0.954};
+// const FusionVector hardIronOffset = {3.37, -1.34, -3.65};
+
+
+const FusionMatrix softIronMatrix = {1.049, 0.005, 0.008, 0.005, 0.999, -0.023, 0.008, -0.023, 0.954};
+const FusionVector hardIronOffset = {3.37, -1.34, -3.65};
 
 void initializeSensorMath() {
   FusionOffsetInitialise(&offset, SAMPLE_RATE);
   FusionAhrsInitialise(&ahrs);
 
-  const FusionAhrsSettings settings = {
+//   const FusionAhrsSettings settings = {
+//       .convention = FusionConventionNwu,
+//       .gain = 0.5f,
+//       .gyroscopeRange = 250.0f,
+//       .accelerationRejection = 20.0f,
+//       .magneticRejection = 20.0f,
+//       .recoveryTriggerPeriod = 3 * SAMPLE_RATE,
+//   };
+//   FusionAhrsSetSettings(&ahrs, &settings);
+// }
+
+//till 10:27 pm 07/01/2025 (code below)
+// const FusionAhrsSettings settings = {
+//       .convention = FusionConventionNwu,
+//       .gain = 0.5f,
+//       .gyroscopeRange = 250.0f,
+//       .accelerationRejection = 20.0f,
+//       .magneticRejection = 20.0f, //20
+//       .recoveryTriggerPeriod =  3* SAMPLE_RATE,
+//   };
+//   FusionAhrsSetSettings(&ahrs, &settings);
+// }
+
+const FusionAhrsSettings settings = {
       .convention = FusionConventionNwu,
-      .gain = 0.5f,
+      .gain = 0.5f, //0.5
       .gyroscopeRange = 250.0f,
-      .accelerationRejection = 20.0f,
-      .magneticRejection = 20.0f,
-      .recoveryTriggerPeriod = 3 * SAMPLE_RATE,
+      .accelerationRejection = 18.5f,//18.5
+      .magneticRejection = 18.5f, //18.5
+      .recoveryTriggerPeriod =  3* SAMPLE_RATE,//3
   };
   FusionAhrsSetSettings(&ahrs, &settings);
 }
@@ -53,10 +80,10 @@ void updateOffset(MPU6050 gyro) {
     gyro.getSensorsReadings(raw_A[0], raw_A[1], raw_a[2], raw_G[0], raw_G[1],
                             raw_g[2]);
 
-    raw_a[0] = raw_A[1];
-    raw_a[1] = -raw_A[0];
-    raw_g[0] = raw_G[1];
-    raw_g[1] = -raw_G[0];
+    raw_a[0] = -raw_A[1];
+    raw_a[1] = raw_A[0];
+    raw_g[0] = -raw_G[1];
+    raw_g[1] = raw_G[0];
     accelerometerOffset.array[0] += raw_a[0] / G;
     accelerometerOffset.array[1] += raw_a[1] / G;
     accelerometerOffset.array[2] += raw_a[2] / G;
@@ -133,7 +160,8 @@ void updateOrientation(float ax, float ay, float az, float gx, float gy,
 
   roll = rotation.angle.roll;
   pitch = -rotation.angle.pitch;
-  yaw = rotation.angle.yaw;
+  //yaw = rotation.angle.yaw;
+  yaw=(atan2(magnetometer.axis.y,magnetometer.axis.x)*180/3.14159); 
   if (roll < 0) {
     roll += 360;
   }
